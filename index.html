@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Star Catcher</title>
+    <style>
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            touch-action: manipulation;
+            font-family: 'Arial', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            height: 100vh;
+            width: 100vw;
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            perspective: 1000px;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        /* Stars Background */
+        #stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .star-bg {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) infinite ease-in-out;
+            opacity: var(--opacity);
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { transform: scale(1); opacity: var(--opacity); }
+            50% { transform: scale(var(--scale)); opacity: calc(var(--opacity) * 1.5); }
+        }
+        
+        /* Basket Styles - Enhanced Beauty */
+        .basket {
+            position: absolute;
+            width: 140px;
+            height: 70px;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+        }
+        
+        .basket-main {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 0 0 70px 70px;
+            box-shadow: 0 10px 25px rgba(254, 180, 123, 0.5),
+                        inset 0 -5px 15px rgba(255, 126, 95, 0.8);
+            transform: rotateX(15deg);
+            overflow: hidden;
+            background: linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%);
+        }
+        
+        .basket-main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 15px;
+            background: linear-gradient(90deg, 
+                      rgba(255,255,255,0.8) 0%, 
+                      rgba(255,255,255,0.2) 50%, 
+                      rgba(255,255,255,0.8) 100%);
+            border-radius: 70px 70px 0 0;
+        }
+        
+        .basket-handle {
+            position: absolute;
+            width: 160px;
+            height: 20px;
+            border-radius: 10px;
+            top: -15px;
+            left: -10px;
+            box-shadow: 0 5px 15px rgba(142, 197, 252, 0.5);
+            transform: rotateX(30deg);
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+        }
+        
+        .basket-gem {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: radial-gradient(circle at 30% 30%, 
+                      rgba(255,255,255,0.8) 0%, 
+                      rgba(255,255,255,0.4) 50%, 
+                      rgba(255,255,255,0.2) 100%);
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        
+        /* Falling Stars - Enhanced */
+        .falling-star {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            z-index: 10;
+            filter: drop-shadow(0 0 15px currentColor);
+            animation: fall linear forwards;
+        }
+        
+        .star-core {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, 
+                      #fff 0%, 
+                      #fff 20%, 
+                      var(--color) 60%, 
+                      rgba(255,255,255,0) 100%);
+            border-radius: 50%;
+            animation: pulse 0.8s infinite alternate;
+        }
+        
+        .star-points {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at center, transparent 40%, var(--color) 40.5%, var(--color) 45%, transparent 45.5%),
+                repeating-conic-gradient(from 0deg, transparent 0deg 18deg, var(--color) 18deg 36deg);
+            border-radius: 50%;
+            transform: rotate(15deg);
+        }
+        
+        .star-glow {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle at center, var(--color) 0%, transparent 70%);
+            opacity: 0.3;
+            z-index: -1;
+        }
+        
+        @keyframes fall {
+            to { transform: translateY(calc(100vh + 100px)); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.8; filter: brightness(1); }
+            50% { transform: scale(1.1); opacity: 1; filter: brightness(1.5); }
+            100% { transform: scale(0.9); opacity: 0.8; filter: brightness(1); }
+        }
+        
+        /* Score Display */
+        .score-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #FF7E5F;
+            font-size: 28px;
+            text-shadow: 0 0 10px currentColor;
+            z-index: 30;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .high-score-display {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            color: #8EC5FC;
+            font-size: 20px;
+            text-shadow: 0 0 5px currentColor;
+            z-index: 30;
+        }
+        
+        /* Lives Display */
+        .lives-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .life {
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle at center, #FF7E5F 0%, #FEB47B 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 10px #FF7E5F;
+        }
+        
+        /* Game Over Screen */
+        #gameOver {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, 
+                      rgba(27, 39, 53, 0.9) 0%, 
+                      rgba(9, 10, 15, 0.95) 100%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        #gameOver h1 {
+            color: #FF7E5F;
+            font-size: 72px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px #FEB47B,
+                         0 0 40px #FEB47B;
+            animation: glow 2s infinite alternate;
+        }
+        
+        #finalScoreDisplay {
+            color: white;
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px currentColor;
+        }
+        
+        #highScoreDisplay {
+            color: #8EC5FC;
+            font-size: 28px;
+            margin-bottom: 40px;
+            text-shadow: 0 0 5px currentColor;
+        }
+        
+        #restartBtn {
+            padding: 18px 36px;
+            font-size: 24px;
+            background: linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(254, 180, 123, 0.5),
+                       0 0 15px rgba(255, 126, 95, 0.8);
+            transition: transform 0.3s, box-shadow 0.3s;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+        
+        #restartBtn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(254, 180, 123, 0.7),
+                       0 0 20px rgba(255, 126, 95, 1);
+        }
+        
+        /* Leaderboard Styles */
+        #leaderboard {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            width: 80%;
+            max-width: 500px;
+        }
+        
+        #leaderboard h2 {
+            color: #FEB47B;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 15px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+        }
+        
+        .leaderboard-entry:nth-child(2) {
+            background: linear-gradient(90deg, rgba(255,215,0,0.2) 0%, rgba(255,215,0,0.05) 100%);
+            color: gold;
+        }
+        
+        .leaderboard-entry:nth-child(3) {
+            background: linear-gradient(90deg, rgba(192,192,192,0.2) 0%, rgba(192,192,192,0.05) 100%);
+            color: silver;
+        }
+        
+        .leaderboard-entry:nth-child(4) {
+            background: linear-gradient(90deg, rgba(205,127,50,0.2) 0%, rgba(205,127,50,0.05) 100%);
+            color: #cd7f32;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #FEB47B, 0 0 20px #FEB47B; }
+            to { text-shadow: 0 0 20px #FEB47B, 0 0 40px #FEB47B, 0 0 60px #FF7E5F; }
+        }
+        
+        /* Controls Info */
+        #controlsInfo {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            z-index: 40;
+        }
+        
+        /* Name Input */
+        #nameInputContainer {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 200;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #nameInputContainer h2 {
+            color: #FEB47B;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        #nameInput {
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 20px;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        #saveScoreBtn {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #8EC5FC 0%, #E0C3FC 100%);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(142, 197, 252, 0.5);
+            font-weight: bold;
+        }
+        
+        /* Instructions Dialog */
+        #instructionsDialog {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, 
+                      rgba(27, 39, 53, 0.95) 0%, 
+                      rgba(9, 10, 15, 0.98) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        #instructionsDialog h1 {
+            color: #FEB47B;
+            font-size: 42px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #FEB47B;
+        }
+        
+        #instructionsDialog h2 {
+            color: #8EC5FC;
+            font-size: 28px;
+            margin: 20px 0 10px;
+        }
+        
+        #instructionsDialog p {
+            font-size: 18px;
+            margin-bottom: 15px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+        
+        #instructionsDialog ul {
+            text-align: left;
+            max-width: 500px;
+            margin: 0 auto 30px;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        #instructionsDialog li {
+            margin-bottom: 10px;
+        }
+        
+        #startGameBtn {
+            padding: 18px 36px;
+            font-size: 24px;
+            background: linear-gradient(135deg, #8EC5FC 0%, #E0C3FC 100%);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(142, 197, 252, 0.5);
+            font-weight: bold;
+            margin-top: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        #startGameBtn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(142, 197, 252, 0.7);
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .basket {
+                width: 100px;
+                height: 50px;
+                border-radius: 0 0 50px 50px;
+            }
+            
+            .basket-handle {
+                width: 120px;
+                height: 15px;
+                top: -12px;
+            }
+            
+            .score-display, .high-score-display {
+                font-size: 24px;
+            }
+            
+            #gameOver h1 {
+                font-size: 48px;
+            }
+            
+            #finalScoreDisplay {
+                font-size: 28px;
+            }
+            
+            #highScoreDisplay {
+                font-size: 24px;
+            }
+            
+            #restartBtn {
+                padding: 15px 30px;
+                font-size: 20px;
+            }
+            
+            .life {
+                width: 25px;
+                height: 25px;
+            }
+            
+            #leaderboard {
+                width: 90%;
+                padding: 15px;
+            }
+            
+            #instructionsDialog h1 {
+                font-size: 32px;
+            }
+            
+            #instructionsDialog h2 {
+                font-size: 24px;
+            }
+            
+            #instructionsDialog p,
+            #instructionsDialog ul {
+                font-size: 16px;
+            }
+            
+            #startGameBtn {
+                padding: 15px 30px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="stars"></div>
+        
+        <!-- Game Elements -->
+        <div id="scoreDisplay" class="score-display">SCORE: 0</div>
+        <div id="highScoreDisplay" class="high-score-display">HIGH: 0</div>
+        <div class="lives-container" id="livesContainer">
+            <div class="life"></div>
+            <div class="life"></div>
+            <div class="life"></div>
+        </div>
+        <div class="basket" id="basket">
+            <div class="basket-handle"></div>
+            <div class="basket-main"></div>
+            <div class="basket-gem"></div>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div id="gameOver">
+            <h1>GAME OVER</h1>
+            <div id="finalScoreDisplay">SCORE: 0</div>
+            <div id="highScoreDisplay">HIGH SCORE: 0</div>
+            <button id="restartBtn">PLAY AGAIN</button>
+            <div id="leaderboard">
+                <h2>LEADERBOARD</h2>
+                <div id="leaderboardEntries"></div>
+            </div>
+        </div>
+        
+        <!-- Name Input Screen -->
+        <div id="nameInputContainer">
+            <h2>NEW HIGH SCORE!</h2>
+            <input type="text" id="nameInput" placeholder="Enter your name" maxlength="15">
+            <button id="saveScoreBtn">SAVE SCORE</button>
+        </div>
+        
+        <!-- Instructions Dialog -->
+        <div id="instructionsDialog">
+            <h1>COSMIC STAR CATCHER</h1>
+            <h2>How to Play</h2>
+            <p>Catch falling stars with your basket to score points!</p>
+            <p>You have 3 lives - lose a life for each star you miss.</p>
+            
+            <h2>Controls</h2>
+            <ul>
+                <li><strong>PC/Laptop:</strong> Use A/D or Left/Right arrow keys to move the basket</li>
+                <li><strong>Mobile:</strong> Tap on the left or right side of the screen to move</li>
+            </ul>
+            
+            <p>The game gets faster as you score more points!</p>
+            <p>Try to beat your high score and make it to the leaderboard!</p>
+            
+            <button id="startGameBtn">START GAME</button>
+        </div>
+        
+        <div id="controlsInfo">
+            Move with A/D or ←/→ Keys | Tap left/right on mobile
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        const gameState = {
+            active: false, // Start inactive until player clicks start
+            score: 0,
+            highScore: 0,
+            lives: 3,
+            position: 50, // percentage from left
+            leftKey: false,
+            rightKey: false,
+            stars: [],
+            starSpeed: 2, // Reduced from 3 to make it easier
+            starSpawnRate: 1500, // Increased from 1000 to make it easier
+            lastStarTime: 0,
+            leaderboard: []
+        };
+        
+        // DOM elements
+        const gameContainer = document.getElementById('gameContainer');
+        const starsBg = document.getElementById('stars');
+        const basket = document.getElementById('basket');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        const livesContainer = document.getElementById('livesContainer');
+        const gameOverScreen = document.getElementById('gameOver');
+        const finalScoreDisplay = document.getElementById('finalScoreDisplay');
+        const restartBtn = document.getElementById('restartBtn');
+        const leaderboardEntries = document.getElementById('leaderboardEntries');
+        const nameInputContainer = document.getElementById('nameInputContainer');
+        const nameInput = document.getElementById('nameInput');
+        const saveScoreBtn = document.getElementById('saveScoreBtn');
+        const instructionsDialog = document.getElementById('instructionsDialog');
+        const startGameBtn = document.getElementById('startGameBtn');
+        
+        // Initialize game
+        function initGame() {
+            // Load saved data
+            loadHighScore();
+            loadLeaderboard();
+            
+            // Create background stars
+            createBackgroundStars();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Start game loop
+            gameLoop();
+        }
+        
+        // Load high score from localStorage
+        function loadHighScore() {
+            const savedHighScore = localStorage.getItem('cosmicStarHighScore');
+            if (savedHighScore) {
+                gameState.highScore = parseInt(savedHighScore);
+                highScoreDisplay.textContent = `HIGH: ${gameState.highScore}`;
+            }
+        }
+        
+        // Load leaderboard from localStorage
+        function loadLeaderboard() {
+            const savedLeaderboard = localStorage.getItem('cosmicStarLeaderboard');
+            if (savedLeaderboard) {
+                gameState.leaderboard = JSON.parse(savedLeaderboard);
+                updateLeaderboardDisplay();
+            }
+        }
+        
+        // Save leaderboard to localStorage
+        function saveLeaderboard() {
+            localStorage.setItem('cosmicStarLeaderboard', JSON.stringify(gameState.leaderboard));
+        }
+        
+        // Update leaderboard display
+        function updateLeaderboardDisplay() {
+            leaderboardEntries.innerHTML = '';
+            
+            // Sort leaderboard by score (descending)
+            const sortedLeaderboard = [...gameState.leaderboard].sort((a, b) => b.score - a.score);
+            
+            // Display top 10 or all if less than 10
+            const displayCount = Math.min(10, sortedLeaderboard.length);
+            
+            if (displayCount === 0) {
+                leaderboardEntries.innerHTML = '<div class="leaderboard-entry">No scores yet</div>';
+                return;
+            }
+            
+            for (let i = 0; i < displayCount; i++) {
+                const entry = sortedLeaderboard[i];
+                const entryElement = document.createElement('div');
+                entryElement.className = 'leaderboard-entry';
+                entryElement.innerHTML = `
+                    <span>${i + 1}. ${entry.name}</span>
+                    <span>${entry.score}</span>
+                `;
+                leaderboardEntries.appendChild(entryElement);
+            }
+        }
+        
+        // Create background stars
+        function createBackgroundStars() {
+            const starsCount = 200;
+            const containerWidth = window.innerWidth;
+            const containerHeight = window.innerHeight;
+            
+            for (let i = 0; i < starsCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star-bg';
+                
+                // Random properties
+                const size = Math.random() * 3;
+                const opacity = Math.random() * 0.8 + 0.2;
+                const duration = Math.random() * 5 + 3;
+                const scale = Math.random() * 0.5 + 1.2;
+                
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${Math.random() * containerWidth}px`;
+                star.style.top = `${Math.random() * containerHeight}px`;
+                star.style.setProperty('--opacity', opacity);
+                star.style.setProperty('--duration', `${duration}s`);
+                star.style.setProperty('--scale', scale);
+                
+                starsBg.appendChild(star);
+            }
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                if (!gameState.active) return;
+                
+                switch(e.key) {
+                    case 'a':
+                    case 'A':
+                    case 'ArrowLeft':
+                        gameState.leftKey = true;
+                        break;
+                    case 'd':
+                    case 'D':
+                    case 'ArrowRight':
+                        gameState.rightKey = true;
+                        break;
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                switch(e.key) {
+                    case 'a':
+                    case 'A':
+                    case 'ArrowLeft':
+                        gameState.leftKey = false;
+                        break;
+                    case 'd':
+                    case 'D':
+                    case 'ArrowRight':
+                        gameState.rightKey = false;
+                        break;
+                }
+            });
+            
+            // Touch controls for mobile
+            gameContainer.addEventListener('touchstart', handleTouchStart);
+            gameContainer.addEventListener('touchmove', handleTouchMove);
+            gameContainer.addEventListener('touchend', handleTouchEnd);
+            
+            // Restart button
+            restartBtn.addEventListener('click', restartGame);
+            
+            // Save score button
+            saveScoreBtn.addEventListener('click', saveScore);
+            
+            // Start game button
+            startGameBtn.addEventListener('click', startGame);
+        }
+        
+        // Start the game (from instructions screen)
+        function startGame() {
+            instructionsDialog.style.display = 'none';
+            gameState.active = true;
+        }
+        
+        // Handle player movement
+        function updatePlayerPosition() {
+            // Reduced speed from 2 to 1.5 to make controls less sensitive
+            const speed = 1.5;
+            
+            if (gameState.leftKey) gameState.position = Math.max(5, gameState.position - speed);
+            if (gameState.rightKey) gameState.position = Math.min(95, gameState.position + speed);
+            
+            // Update basket position
+            basket.style.left = `${gameState.position}%`;
+            
+            // Add tilt effect based on movement
+            const tilt = (gameState.leftKey ? -10 : (gameState.rightKey ? 10 : 0));
+            basket.style.transform = `translateX(-50%) rotate(${tilt}deg)`;
+        }
+        
+        // Create falling star
+        function createStar() {
+            if (!gameState.active || Date.now() - gameState.lastStarTime < gameState.starSpawnRate) return;
+            
+            gameState.lastStarTime = Date.now();
+            
+            const star = document.createElement('div');
+            star.className = 'falling-star';
+            
+            // Random position at top
+            const x = Math.random() * (window.innerWidth - 50);
+            star.style.left = `${x}px`;
+            star.style.top = '-50px';
+            
+            // Random color
+            const colors = ['#FF7E5F', '#8EC5FC', '#E0C3FC', '#FEB47B', '#A1FFCE'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            star.style.setProperty('--color', color);
+            
+            // Create star elements
+            const starCore = document.createElement('div');
+            starCore.className = 'star-core';
+            
+            const starPoints = document.createElement('div');
+            starPoints.className = 'star-points';
+            starPoints.style.setProperty('--color', color);
+            
+            const starGlow = document.createElement('div');
+            starGlow.className = 'star-glow';
+            starGlow.style.setProperty('--color', color);
+            
+            star.appendChild(starCore);
+            star.appendChild(starPoints);
+            star.appendChild(starGlow);
+            
+            gameContainer.appendChild(star);
+            
+            // Animation - increased duration to make stars fall slower
+            const duration = Math.max(2000, 5000 - (gameState.score * 10));
+            star.style.animationDuration = `${duration}ms`;
+            
+            // Add to stars array
+            const starObj = {
+                element: star,
+                x: x,
+                y: -50,
+                startTime: Date.now(),
+                caught: false,
+                missed: false
+            };
+            gameState.stars.push(starObj);
+        }
+        
+        // Update star positions and check collisions
+        function updateStars() {
+            const now = Date.now();
+            const containerHeight = window.innerHeight;
+            
+            for (let i = gameState.stars.length - 1; i >= 0; i--) {
+                const star = gameState.stars[i];
+                
+                if (star.caught || star.missed) continue;
+                
+                // Update position based on animation progress
+                const elapsed = now - star.startTime;
+                const progress = Math.min(1, elapsed / parseInt(star.element.style.animationDuration));
+                star.y = -50 + progress * (containerHeight + 100);
+                star.element.style.top = `${star.y}px`;
+                
+                // Check for catches
+                if (isCaught(star)) {
+                    catchStar(star);
+                    continue;
+                }
+                
+                // Check if missed
+                if (star.y > containerHeight) {
+                    missStar(star);
+                }
+            }
+        }
+        
+        // Check if star is caught by player
+        function isCaught(star) {
+            const starRect = star.element.getBoundingClientRect();
+            const basketRect = basket.getBoundingClientRect();
+            
+            return (
+                starRect.bottom >= basketRect.top + 20 && // Only catch when star reaches the basket opening
+                starRect.right >= basketRect.left + 10 &&
+                starRect.left <= basketRect.right - 10
+            );
+        }
+        
+        // Handle star catch
+        function catchStar(star) {
+            star.caught = true;
+            
+            // Update score
+            gameState.score++;
+            scoreDisplay.textContent = `SCORE: ${gameState.score}`;
+            
+            // Create particles
+            createParticles(star.element.getBoundingClientRect());
+            
+            // Remove the star
+            star.element.remove();
+            gameState.stars = gameState.stars.filter(s => s !== star);
+            
+            // Increase difficulty more slowly
+            if (gameState.score % 10 === 0) { // Changed from 5 to 10 to make it easier
+                gameState.starSpeed += 0.1; // Reduced from 0.2
+                gameState.starSpawnRate = Math.max(800, gameState.starSpawnRate - 30); // Reduced from 300 and 50
+            }
+        }
+        
+        // Handle star miss
+        function missStar(star) {
+            star.missed = true;
+            
+            // Lose a life
+            gameState.lives--;
+            updateLivesDisplay();
+            
+            // Remove the star
+            star.element.remove();
+            gameState.stars = gameState.stars.filter(s => s !== star);
+            
+            // Check if game over
+            if (gameState.lives <= 0) {
+                endGame();
+            }
+        }
+        
+        // Update lives display
+        function updateLivesDisplay() {
+            const livesElements = livesContainer.querySelectorAll('.life');
+            
+            for (let i = 0; i < livesElements.length; i++) {
+                livesElements[i].style.display = i < gameState.lives ? 'block' : 'none';
+            }
+        }
+        
+        // Create particles effect
+        function createParticles(rect) {
+            const particleCount = 15;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Position at star location
+                particle.style.left = `${rect.left + rect.width/2}px`;
+                particle.style.top = `${rect.top + rect.height/2}px`;
+                
+                // Random color based on basket colors
+                const hue = Math.random() * 30 + 15; // Orange color range
+                particle.style.backgroundColor = `hsl(${hue}, 100%, 70%)`;
+                
+                // Random size
+                const size = Math.random() * 8 + 4;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Random movement
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 100 + 50;
+                particle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+                particle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+                
+                gameContainer.appendChild(particle);
+                
+                // Remove after animation
+                setTimeout(() => {
+                    particle.remove();
+                }, 1000);
+            }
+        }
+        
+        // End game
+        function endGame() {
+            gameState.active = false;
+            
+            // Update game over display
+            finalScoreDisplay.textContent = `SCORE: ${gameState.score}`;
+            
+            // Check if new high score
+            if (gameState.score > gameState.highScore) {
+                gameState.highScore = gameState.score;
+                localStorage.setItem('cosmicStarHighScore', gameState.highScore);
+                showNameInput();
+            } else {
+                gameOverScreen.style.display = "flex";
+            }
+            
+            highScoreDisplay.textContent = `HIGH SCORE: ${gameState.highScore}`;
+        }
+        
+        // Show name input for new high score
+        function showNameInput() {
+            nameInputContainer.style.display = "flex";
+            nameInput.focus();
+        }
+        
+        // Save score to leaderboard
+        function saveScore() {
+            const name = nameInput.value.trim() || 'Anonymous';
+            
+            // Add to leaderboard
+            gameState.leaderboard.push({
+                name: name,
+                score: gameState.score,
+                date: new Date().toISOString()
+            });
+            
+            // Save leaderboard
+            saveLeaderboard();
+            
+            // Update display
+            updateLeaderboardDisplay();
+            
+            // Hide input and show game over
+            nameInputContainer.style.display = "none";
+            gameOverScreen.style.display = "flex";
+        }
+        
+        // Restart game
+        function restartGame() {
+            // Clear all stars
+            gameState.stars.forEach(star => star.element.remove());
+            gameState.stars = [];
+            
+            // Reset game state
+            gameState.active = true;
+            gameState.score = 0;
+            gameState.lives = 3;
+            gameState.position = 50;
+            gameState.starSpeed = 2; // Reset to easier speed
+            gameState.starSpawnRate = 1500; // Reset to easier spawn rate
+            
+            // Update displays
+            scoreDisplay.textContent = `SCORE: 0`;
+            updateLivesDisplay();
+            
+            // Reset position
+            basket.style.left = `${gameState.position}%`;
+            basket.style.transform = 'translateX(-50%) rotate(0deg)';
+            
+            // Hide game over screen
+            gameOverScreen.style.display = "none";
+        }
+        
+        // Touch controls
+        function handleTouchStart(e) {
+            if (!gameState.active) return;
+            
+            const touchX = e.touches[0].clientX;
+            const halfWidth = window.innerWidth / 2;
+            
+            gameState.leftKey = touchX < halfWidth;
+            gameState.rightKey = touchX >= halfWidth;
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            handleTouchStart(e);
+        }
+        
+        function handleTouchEnd() {
+            gameState.leftKey = false;
+            gameState.rightKey = false;
+        }
+        
+        // Main game loop
+        function gameLoop() {
+            if (gameState.active) {
+                updatePlayerPosition();
+                createStar();
+                updateStars();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start the game initialization
+        initGame();
+    </script>
+</body>
+</html>
